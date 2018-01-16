@@ -1,0 +1,43 @@
+{
+    "trigger" : { "schedule" : { "interval" : "300s" }},
+    "input" : {
+        "search" : {
+            "request" : {
+                "indices" : [ "qa_order_view*" ],
+                "body" : {
+                    "query" : {
+                        "range" : {
+                            "insertion_time" : {
+                            "gte": "now-%sm/m"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "condition" : {
+        "compare" : { 
+            "ctx.payload.hits.total" : { 
+                "lte" : 5000
+            }
+        } 
+    },
+    "actions" : {
+        "notify-slack" : {
+            "throttle_period" : "15m",
+            "slack" : {
+                "account" : "monitoring",
+                "message" : {
+                    "to" : [ "@james", "#dataplant-alerts-qa" ],
+                    "text" : "QA OrderView - %s min low watermark {{ctx.payload.hits.total}}/%s"
+                }
+            }
+        }
+    },
+    "schedule" : {
+        "window_size" : 120,
+        "sensitivity" : 60,
+        "document" : "order"
+    }
+}
